@@ -148,8 +148,10 @@ Set `aspect_ratio` (or `size`) on any image/video request — **default `16:9`**
 
 - **Flow** natively offers only `16:9` and `9:16`; any other ratio is mapped to the nearest
   (portrait → `9:16`, otherwise → `16:9`). For `1:1`, `4:3`, etc. use `muse-image`.
-- **Flow** outputs are always **720p** and a **single** result; for `flow-video`, `duration`
-  snaps to the nearest of `4 / 6 / 8 / 10` seconds.
+- **Flow** outputs are always **720p** and a **single** result. Choose the Flow model with the
+  `model` id: video — `flow-video` (Omni, variable `duration` 4/6/8/10s), `flow-video-fast`,
+  `flow-video-quality`, `flow-video-lite` (Veo 3.1; ~8s fixed length); image — `flow-image`
+  (Nano Banana Pro), `flow-image-lite` (Nano Banana 2 Lite), `flow-image-2` (Nano Banana 2.1).
 - Muse / Gemini / ChatGPT / Grok apply the ratio through the prompt, so exact pixel sizes
   vary but the orientation is always honored (e.g. Muse `16:9` ≈ 2048×1152, `9:16` ≈
   1152×2048, `1:1` ≈ 1600×1600).
