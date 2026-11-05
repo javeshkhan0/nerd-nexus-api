@@ -134,6 +134,22 @@ The response `url` may be a relative `/v1/media/…` path — join it to the ser
 add another `/v1`). Full parameter tables and a ready-made `nerdnexus_media.py` are in the
 dashboard's **Integration guide** tab.
 
+### Aspect ratios
+
+Set `aspect_ratio` (or `size`) on any image/video request — **default `16:9`**.
+
+| Provider | Image ratios | Video ratios |
+|---|---|---|
+| **Muse** (`muse-image` / `muse-video`) | `1:1`, `16:9`, `9:16`, `4:3`, `3:4` (others approximated) | `16:9`, `9:16`, `1:1` |
+| **Flow** (`flow-image` / `flow-video`) | `16:9`, `9:16` only | `16:9`, `9:16` only |
+| **Gemini / ChatGPT / Grok** (`*-image`) | `1:1`, `16:9`, `9:16`, `4:3`, `3:4`, `3:2`, `2:3` | — |
+
+- **Flow** natively offers only `16:9` and `9:16`; any other ratio is mapped to the nearest
+  (portrait → `9:16`, otherwise → `16:9`). For `1:1`, `4:3`, etc. use `muse-image`.
+- Muse / Gemini / ChatGPT / Grok apply the ratio through the prompt, so exact pixel sizes
+  vary but the orientation is always honored (e.g. Muse `16:9` ≈ 2048×1152, `9:16` ≈
+  1152×2048, `1:1` ≈ 1600×1600).
+
 ---
 
 ## 6. Claude Code / Anthropic-format clients — read this
