@@ -174,27 +174,44 @@ Flow does not use a reference image.
 
 ## 6. Concurrency & limits
 
-The gateway shares a pool of browser **workers** (default **8**) across the web providers
-(Muse, Flow, Gemini, ChatGPT, Claude, Grok). This bounds how many requests run at once:
+**None of these are hard caps — they are operator settings you can raise, and any request over
+the current limit *queues* (it is never rejected while workers exist).** The gateway runs
+browser **workers** shared across the web providers (Muse, Flow, Gemini, ChatGPT, Claude, Grok).
 
-- **Up to 8 jobs run in parallel** across all web providers; extra requests **queue** (they are
-  not rejected) until a worker frees, up to the queue timeout (default 1 hour), then a `503`.
-  An agent can fire many requests — they drain in batches.
-- At most **2 different AIs run at the same time** (`AI models at a time`, default 2, to bound
-  RAM); a third provider's jobs queue until a slot frees.
-- **One account = one job at a time.** A provider with a single account runs **one** request at
-  a time no matter the worker count; add more accounts for that provider to parallelise it.
-  Effective parallelism for a provider = `min(its eligible accounts, workers)`.
+Three settings (dashboard → **Settings**) decide how much runs at once:
 
-**Not limited by the worker pool:**
-- **Direct-API** models (`api-claude`, `api-codex`) pass straight through to your purchased
-  upstream key — limited only by that upstream's own rate limits.
-- **Local CLI** models (`claude-code`, `codex-cli`, `antigravity`) run local CLI processes,
-  not browser workers.
+| Setting | Default | Max | What it controls |
+|---|---|---|---|
+| **Concurrent workers** | 8 | 32 | Total jobs running in parallel across all web providers. |
+| **AI models at a time** | 2 | 8 | How many *different* AIs run simultaneously (bounds RAM). |
+| **Accounts per provider** | — | — | Each account runs **one** job at a time. |
 
-Raise throughput by increasing **Concurrent workers** (up to 32) in the dashboard Settings —
-each worker is ~1 Chrome window, so it costs RAM. Images are synchronous; videos are async
-(poll the task), so long video jobs never hold a connection open.
+**How they combine (read this to avoid surprises):**
+- One provider's parallelism = **`min(its accounts, Concurrent workers)`**. So **Muse with 1
+  account runs 1 job at a time even if workers = 8** — raising workers alone does **not** speed
+  up a single-account provider. To run that provider's jobs in parallel, **add more accounts for
+  it** (e.g. more Muse accounts). With 4 Muse accounts and workers ≥ 4, up to 4 Muse jobs run at
+  once.
+- Across providers, at most **"AI models at a time"** different AIs run together; a further
+  provider's jobs wait for a free slot.
+- Over the active limit, requests **queue** (task status `queued` — not an error) until a worker
+  frees, up to the queue timeout (default 1 hour); only then a `503`. So an agent can safely fire
+  many requests — they drain in batches, nothing is lost.
+
+**To get more throughput** (all in dashboard → Settings, mostly live/no restart):
+1. **Raise Concurrent workers** (up to 32) → more jobs in parallel. Each worker ≈ one Chrome
+   window, so it costs RAM — set it to what the machine can handle.
+2. **Raise AI models at a time** (up to 8) → run more *different* AIs together.
+3. **Add more accounts** for any provider you want to parallelise (one account = one concurrent
+   job for that provider).
+
+**Not bound by the worker pool at all:**
+- **Direct-API** models (`api-claude`, `api-codex`) go straight to your purchased upstream key —
+  limited only by that upstream's own rate limits.
+- **Local CLI** models (`claude-code`, `codex-cli`, `antigravity`) run local processes.
+
+Images are **synchronous** (the HTTP call returns the result); videos are **async** (POST returns
+a task id, then poll), so long jobs never hold a connection open.
 
 ---
 
