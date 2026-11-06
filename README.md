@@ -51,10 +51,16 @@ Route to a provider by setting `model`. Call `GET /v1/models` for the live list.
 | `antigravity` | Local **Antigravity** CLI |
 
 ### Images — `POST /v1/images/generations`
-`muse-image`, `flow-image`, `gemini-image`, `chatgpt-image`, `grok-image`
+`muse-image`, `flow-image` (Nano Banana Pro), `flow-image-lite` (Nano Banana 2 Lite),
+`flow-image-2` (Nano Banana 2.1), `gemini-image`, `chatgpt-image`, `grok-image`
 
 ### Video — `POST /v1/videos`, then poll `GET /v1/videos/{id}`
-`muse-video`, `flow-video`
+`muse-video`, `flow-video` (Omni 1.1 Flash), `flow-video-fast`, `flow-video-quality`,
+`flow-video-lite` (Veo 3.1)
+
+> **CLI models** (`claude-code`, `codex-cli`, `antigravity`) must be enabled in the dashboard's
+> **LLM Assistant** tab (`claude-code` is **off by default**). `GET /v1/models` reflects the
+> live, usable set.
 
 ---
 
@@ -156,9 +162,43 @@ Set `aspect_ratio` (or `size`) on any image/video request — **default `16:9`**
   vary but the orientation is always honored (e.g. Muse `16:9` ≈ 2048×1152, `9:16` ≈
   1152×2048, `1:1` ≈ 1600×1600).
 
+### Image-to-video & reference image
+
+Add `"reference_image"` to a request — a `data:image/...;base64,…` URI, or an image URL the
+server can reach:
+- On **`muse-video`** it animates that image as the first frame (image-to-video).
+- On **`/v1/images/generations`** (Muse / Gemini / ChatGPT / Grok) it is used as a style / edit
+  reference. (`/v1/images/edits` also accepts a multipart `image` file.)
+
+Flow does not use a reference image.
+
 ---
 
-## 6. Claude Code / Anthropic-format clients
+## 6. Concurrency & limits
+
+The gateway shares a pool of browser **workers** (default **8**) across the web providers
+(Muse, Flow, Gemini, ChatGPT, Claude, Grok). This bounds how many requests run at once:
+
+- **Up to 8 jobs run in parallel** across all web providers; extra requests **queue** (they are
+  not rejected) until a worker frees, up to the queue timeout (default 1 hour), then a `503`.
+  An agent can fire many requests — they drain in batches.
+- At most **2 different AIs run at the same time** (default 2, to bound RAM); a third provider's
+  jobs queue until a slot frees.
+- **One account = one job at a time.** A provider with a single account runs **one** request at
+  a time no matter the worker count; add more accounts for that provider to parallelise it.
+  Effective parallelism for a provider = `min(its eligible accounts, workers)`.
+
+**Not limited by the worker pool:** direct-API models (`api-claude`, `api-codex`) pass straight
+through to your purchased upstream key (limited only by that upstream's own rate limits); local
+CLI models (`claude-code`, `codex-cli`, `antigravity`) run local CLI processes, not workers.
+
+Raise throughput with **Concurrent workers** (up to 32) in the dashboard Settings — each worker
+is ~1 Chrome window, so it costs RAM. Images are synchronous; videos are async (poll the task),
+so long video jobs never hold a connection open.
+
+---
+
+## 7. Claude Code / Anthropic-format clients
 
 The Master API speaks **OpenAI** format (`/v1/chat/completions`). The official **Claude Code**
 CLI and the Anthropic SDK speak **Anthropic** format (`/v1/messages`, `ANTHROPIC_BASE_URL`),
@@ -174,7 +214,7 @@ Working options:
 
 ---
 
-## 7. Security
+## 8. Security
 
 - The key authorizes **all** connected accounts — treat it like a password. Rotate it from the
   dashboard if it leaks (the old key stops working immediately).
