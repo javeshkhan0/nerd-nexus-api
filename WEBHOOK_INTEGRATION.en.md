@@ -134,6 +134,8 @@ curl http://127.0.0.1:18610/v1/videos \
   -H "Authorization: Bearer nn_YOUR_KEY" -H "Content-Type: application/json" \
   --data-binary '{"model":"muse-video","prompt":"clouds drift over a lake, no speech or text","aspect_ratio":"16:9","duration":10}'
 # -> {"id":"task_…"} ; then: GET /v1/videos/task_… until status completed, download the url.
+# NOTE: muse-video is a FIXED ~10-second clip — a shorter "duration" is IGNORED (the full
+# ~10s is always returned). For variable length (4/6/8/10s) use a flow-video model instead.
 ```
 
 The response `url` may be a relative `/v1/media/…` path — join it to the server root (don't
@@ -156,6 +158,9 @@ Set `aspect_ratio` (or `size`) on any image/video request — **default `16:9`**
   `model` id: video — `flow-video` (Omni, variable `duration` 4/6/8/10s), `flow-video-fast`,
   `flow-video-quality`, `flow-video-lite` (Veo 3.1; ~8s fixed length); image — `flow-image`
   (Nano Banana Pro), `flow-image-lite` (Nano Banana 2 Lite), `flow-image-2` (Nano Banana 2.1).
+- **Video length:** `muse-video` always returns a **fixed ~10-second** clip — Muse only renders
+  ~10s and truncates anything shorter, so the `duration` field is **ignored** for `muse-video`
+  (the full ~10s is returned). For true variable length (4 / 6 / 8 / 10s) use `flow-video` (Omni).
 - Muse / Gemini / ChatGPT / Grok apply the ratio through the prompt, so exact pixel sizes
   vary but the orientation is always honored (e.g. Muse `16:9` ≈ 2048×1152, `9:16` ≈
   1152×2048, `1:1` ≈ 1600×1600).
