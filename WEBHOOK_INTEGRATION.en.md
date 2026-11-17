@@ -175,6 +175,23 @@ server can reach:
 
 Flow does not use a reference image.
 
+### Avoiding content refusals (image & video only)
+
+When **generating images or videos**, the models **refuse real, named or identifiable people**
+(celebrities, public figures, or anyone named) and reject explicit content and some
+copyrighted/branded titles. A refused image/video request now **fails fast** (~30s) with
+`"error_code": "content_refused"` (or `"upstream_integrity_check_failed"`), `"retryable": false`,
+and the **model's own reason** in `error` — read it and adjust the prompt.
+
+- **Do not put a real/celebrity name in an image or video prompt.**
+- **When you attach a `reference_image` of a person, describe them generically** — "the woman in
+  the reference image", "the person in the attached photo" — and generate directly from the
+  reference. Do not name them.
+- Keep image/video prompts free of real names, brand/copyright titles and explicit descriptors.
+
+> **Chat is not affected.** `/v1/chat/completions` (text, research, coding) handles real names and
+> any topic normally — this restriction is only for image/video **generation**.
+
 ---
 
 ## 6. Concurrency & limits
