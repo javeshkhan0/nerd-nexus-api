@@ -192,6 +192,20 @@ and the **model's own reason** in `error` — read it and adjust the prompt.
 > **Chat is not affected.** `/v1/chat/completions` (text, research, coding) handles real names and
 > any topic normally — this restriction is only for image/video **generation**.
 
+### Video generation errors (Muse video backend)
+
+Muse makes video through its **Runway** backend. If Runway is not linked on the account, or is
+down, a `muse-video` request **fails fast** (one attempt, ~50s) with the real reason — these are
+**not** prompt/content problems, so don't rewrite the prompt or retry blindly:
+
+- **`video_backend_not_connected`** (`retryable: false`) — Runway is **not connected** on the Muse
+  account (model says *"Runway isn't connected yet…"* / *"Once you've connected…"*). Fix: connect
+  Runway in the Muse account, then resend. Every account is the same until it's linked.
+- **`video_service_unavailable`** (`retryable: false`) — Runway was temporarily unavailable/erroring
+  (`upstream_unavailable`, `HTTP 502`). Fix: wait and retry later; the prompt is fine.
+
+The model's own message is in the `error` field.
+
 ---
 
 ## 6. Concurrency & limits
