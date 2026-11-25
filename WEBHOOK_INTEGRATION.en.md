@@ -192,18 +192,21 @@ and the **model's own reason** in `error` — read it and adjust the prompt.
 > **Chat is not affected.** `/v1/chat/completions` (text, research, coding) handles real names and
 > any topic normally — this restriction is only for image/video **generation**.
 
-### Video generation errors (Muse video backend)
+### Video generation errors (Muse video)
 
-Muse makes video through its **Runway** backend. If Runway is not linked on the account, or is
-down, a `muse-video` request **fails fast** (one attempt, ~50s) with the real reason — these are
-**not** prompt/content problems, so don't rewrite the prompt or retry blindly:
+Muse makes video with its **own built-in generation** — there is nothing to connect on the account.
+Rarely, on an image-to-video request, Muse's agent mis-routes the clip to a Runway *connector* and
+returns a false *"Runway isn't connected yet…"* / "saved as pending" message instead of using its
+built-in tool. This is a transient agent glitch, **not** a real backend requirement and **not** a
+prompt/content problem — the same account makes video fine on the next try. The router already
+instructs Muse to use its built-in video, so this is uncommon:
 
-- **`video_backend_not_connected`** (`retryable: false`) — Runway is **not connected** on the Muse
-  account (model says *"Runway isn't connected yet…"* / *"Once you've connected…"*). Fix: connect
-  Runway in the Muse account, then resend. Every account is the same until it's linked.
-- **`video_service_unavailable`** (`retryable: false`) — Runway was temporarily unavailable/erroring
-  (`upstream_unavailable`, `HTTP 502`). Fix: wait and retry later; the prompt is fine.
-
+- **`video_backend_not_connected`** (`retryable: false`) — the agent mis-routed to the Runway
+  connector (*"Runway isn't connected yet…"* / *"Once you've connected…"*). Fix: just resend; it
+  normally succeeds. There is nothing to connect.
+- **`video_service_unavailable`** (`retryable: false`) — Muse's video service was temporarily
+  unavailable/erroring (`upstream_unavailable`, `HTTP 502`). Fix: wait and retry later; the prompt
+  is fine.
 The model's own message is in the `error` field.
 
 ---

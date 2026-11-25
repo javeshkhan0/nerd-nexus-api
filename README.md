@@ -198,23 +198,22 @@ Example — instead of `"a photo of Jane Doe beside her car"`, attach the refere
 > **Chat is not affected.** `/v1/chat/completions` (text, research, coding) handles real names and
 > any topic normally — this restriction is only for image/video **generation**.
 
-### Video generation errors (Muse video backend)
+### Video generation errors (Muse video)
 
-Muse generates video through its **Runway** backend. If that backend is not linked on the
-account, or is temporarily down, a `muse-video` request **fails fast** (one attempt, ~50s, not
-minutes across every account) and surfaces the real reason — these are **not** prompt/content
-problems, so **do not** rewrite the prompt or retry blindly:
+Muse makes video with its **own built-in generation** — there is nothing to connect or set up on
+the account (there is no "Runway" link to add, and none is needed). Rarely, on an image-to-video
+request, Muse's agent mis-routes the clip to a Runway *connector* and returns a false *"Runway
+isn't connected yet…"* / "saved as pending" message instead of using its built-in tool. This is a
+transient agent glitch, **not** a real backend requirement and **not** a prompt/content problem —
+the same account makes video fine on the next try. The router already instructs Muse to use its
+built-in video, so this is uncommon:
 
-- **`"error_code": "video_backend_not_connected"`** (`"retryable": false`) — **Runway is not
-  connected on the Muse account.** The model replies e.g. *"Runway isn't connected yet…"* /
-  *"Once you've connected, tell me and I'll generate this clip."* **Fix:** connect Runway in the
-  Muse account's settings, then send the request again. Every account behaves the same until
-  Runway is linked, so retrying across accounts won't help.
-- **`"error_code": "video_service_unavailable"`** (`"retryable": false`) — the video service
-  (Runway) was temporarily unavailable or erroring (`upstream_unavailable`, `HTTP 502`). **Fix:**
-  wait and try again later; the prompt is fine.
-
-The model's own message is always in the `error` field — read it to tell these two apart.
+- **`"error_code": "video_backend_not_connected"`** (`"retryable": false`) — the agent mis-routed
+  to the Runway connector (*"Runway isn't connected yet…"* / *"Once you've connected…"*). **Fix:**
+  just send the request again; it normally succeeds. There is nothing to connect.
+- **`"error_code": "video_service_unavailable"`** (`"retryable": false`) — Muse's video service was
+  temporarily unavailable or erroring (`upstream_unavailable`, `HTTP 502`). **Fix:** wait and try
+  again later; the prompt is fine.
 
 ---
 
